@@ -1,0 +1,45 @@
+{
+  "project_info": {
+    "project_number": "207397535124",
+    "firebase_url": "https://smarthome-8d766.firebaseio.com",
+    "project_id": "smarthome-8d766"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:207397535124:android:59b56024cde71a46",
+        "android_client_info": {
+          "package_name": "cz.websense.smarthome"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "207397535124-vr91inqfm6ncad75bg8vbut0aikqua9n.apps.googleusercontent.com",
+          "client_type": 3
+        },
+        {
+          "client_id": "207397535124-3a72kp8bt2bk618m4tihoa72cqlmmm6o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC4MKwz4GGj6pIIJKEDoNMZpZt8hUXJwlQ"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

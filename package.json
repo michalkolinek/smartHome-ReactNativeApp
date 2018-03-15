@@ -1,0 +1,31 @@
+{
+  "name": "ReactNativeApp",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "node node_modules/react-native/local-cli/cli.js start",
+    "test": "jest"
+  },
+  "dependencies": {
+    "clone": "^2.1.1",
+    "moment": "^2.19.4",
+    "mqtt": "^2.15.0",
+    "prop-types": "^15.6.0",
+    "react": "16.0.0",
+    "react-native": "0.51.0",
+    "react-native-firebase": "^3.2.7",
+    "react-native-local-notifications": "^1.0.0",
+    "react-native-vector-icons": "^4.4.3",
+    "react_native_mqtt": "^1.1.9",
+    "url": "^0.11.0"
+  },
+  "devDependencies": {
+    "babel-jest": "21.2.0",
+    "babel-preset-react-native": "4.0.0",
+    "jest": "21.2.1",
+    "react-test-renderer": "16.0.0"
+  },
+  "jest": {
+    "preset": "react-native"
+  }
+}
