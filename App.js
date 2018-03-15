@@ -26,7 +26,6 @@ export default class App extends Component {
 
 		this.state = {
 			status: 'idle',
-			acked: false,
 			pending: false,
 			deviceToken: null,
 			registered: false,
@@ -70,9 +69,10 @@ export default class App extends Component {
                 },  {
 					id: 'washmachine',
 					title: 'Pračka',
-					status: null,
+					status: 'idle',
 					time: null,
-					supplyV: null
+					supplyV: null,
+					acked: false
 				}, {
                     id: 'sprinklers',
                     title: 'Spriklery',
@@ -170,6 +170,8 @@ export default class App extends Component {
 		let nodes = clone(this.state.nodes);
 		let i = null;
 
+		console.log(message.topic, data);
+
 		switch(message.topic) {
 			case 'smarthome/outside':
 				i = nodes.findIndex((item) => item.id == 'outside');
@@ -177,10 +179,9 @@ export default class App extends Component {
 				nodes[i].hum = data.hum;
 				break;
 			case 'smarthome/washmachine':
-				i = nodes.findIndex((item) => item.id == 'washmachine');
-				nodes[i].status = data.status;
-//				if(data.status === 'finished' && this.state.acked === false) {
-//					this.triggerNotification('Pračka doprala', 'Má paní, Tvé prádlo je čisté.');
+//				i = nodes.findIndex((item) => item.id == 'washmachine');
+//				if(this.state.acked === false) {
+//				    nodes[i].status = data.status;
 //				}
 				break;
 			default:
@@ -201,14 +202,24 @@ export default class App extends Component {
 
 	}
 
-	handleAckClick() {
-		this.setState({acked: true});
+	handleWashmachineAck() {
+		let nodes = clone(this.state.nodes);
+        const i = nodes.findIndex((item) => item.id == 'washmachine');
+        nodes[i].acked = true;
+        this.setState({nodes});
+
+		setTimeout(() => {
+		    let nodes = clone(this.state.nodes);
+		    const i = nodes.findIndex((item) => item.id == 'washmachine');
+        	nodes[i].status = 'idle';
+        	nodes[i].acked = false;
+		    this.setState({nodes});
+		}, 10)
 	}
 
-	triggerNotification(message) {
-		console.log('notify', message);
-		RNLocalNotifications.createNotification(1, message, '2018-03-06 12:30', 'default');
-	}
+//	triggerNotification(message) {
+//		RNLocalNotifications.createNotification(1, message, '2018-03-06 12:30', 'default');
+//	}
 
 	registerFCM() {
 	    const fcm = firebase.messaging();
@@ -218,13 +229,18 @@ export default class App extends Component {
         });
         fcm.subscribeToTopic('notifications');
         fcm.onMessage((message) => {
-            console.log('new message', message);
-            this.triggerNotification('nova zprava')
+            console.log('new FCM message', message);
+
+            let nodes = clone(this.state.nodes);
+            const i = nodes.findIndex((item) => item.id == 'washmachine');
+
+            if(this.state.nodes[i].acked === false && nodes[i].status !== 'finished') {
+                nodes[i].status = 'finished';
+                const d = new Date();
+                nodes[i].time = d.getTime();
+                this.setState({nodes});
+            }
         });
-        fcm.getInitialNotification((message) => {
-            console.log('initial', message);
-            this.triggerNotification('nova initial zprava')
-        })
 	}
 
 	registerDevice() {
@@ -243,7 +259,8 @@ export default class App extends Component {
                 <NodesList
                     pending={this.state.pending}
                     nodes={this.state.nodes}
-                    onRefresh={() => this.reconnect()} />
+                    onRefresh={() => this.reconnect()}
+                    onWashmachineAck={() => this.handleWashmachineAck()}/>
 			</View>
 		);
 	}

@@ -81,4 +81,20 @@ export default StyleSheet.create({
          color: common.colors.black
     },
 
+    notification: {
+        fontSize: 18
+    },
+
+    boxButton: {
+        flex: 1,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 10
+    },
+
+    ackButton: {
+        width: 60,
+        fontSize: 18
+    }
+
 });
