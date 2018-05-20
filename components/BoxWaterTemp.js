@@ -6,7 +6,7 @@ import styles from '../styles/nodeBox';
 import common from '../styles/common';
 import Icon from './Icon';
 
-export default class BoxMoist extends Component {
+export default class BoxWaterTemp extends Component {
 
     static propTypes = {
         value: PropTypes.number
@@ -15,9 +15,9 @@ export default class BoxMoist extends Component {
     render() {
         if(this.props.value) {
             return (
-                <View style={[styles.box, styles.boxGreen]}>
-                    <Icon name="water" color={common.colors.green} />
-                    <Text style={[styles.boxText, styles.greenText]}>{this.props.value}</Text>
+                <View style={[styles.box, styles.boxBlue]}>
+                    <Icon name={'temp-3'} color={common.colors.blue} />
+                    <Text style={[styles.boxText, styles.blueText]}>{this.props.value}°C</Text>
                 </View>
             );
         } else {

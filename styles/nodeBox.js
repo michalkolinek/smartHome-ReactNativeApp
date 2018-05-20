@@ -69,6 +69,10 @@ export default StyleSheet.create({
          borderColor: common.colors.yellow
     },
 
+    boxGreen: {
+         borderColor: common.colors.green
+    },
+
     blueText: {
         color: common.colors.blue,
     },
@@ -78,7 +82,15 @@ export default StyleSheet.create({
     },
 
     yellowText: {
-         color: common.colors.black
+         color: common.colors.yellow
+    },
+
+    greenText: {
+         color: common.colors.green
+    },
+
+    blackText: {
+        color: common.colors.black
     },
 
     notification: {

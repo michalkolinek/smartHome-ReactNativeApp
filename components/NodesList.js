@@ -1,8 +1,10 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { StyleSheet, Text, FlatList, View, RefreshControl } from 'react-native';
+import { FlatList, View, RefreshControl } from 'react-native';
 import TempHumBox from './TempHumBox';
 import WashmachineBox from './WashmachineBox';
+import SprinklersBox from './SprinklersBox';
+import PoolBox from './PoolBox';
 import styles from '../styles/nodesList';
 
 export default class NodesList extends Component {
@@ -20,8 +22,14 @@ export default class NodesList extends Component {
 
     renderNode(node) {
         switch(node.item.id) {
-            case 'washmachine' : return <WashmachineBox node={node.item} index={node.index} onAck={() => this.props.onWashmachineAck()} />
-            default : return <TempHumBox node={node.item} index={node.index} />
+            case 'washmachine' :
+                return <WashmachineBox node={node.item} index={node.index} onAck={() => this.props.onWashmachineAck()} />
+            case 'sprinklers' :
+                return <SprinklersBox node={node.item} index={node.index} />
+            case 'pool' :
+                return <PoolBox node={node.item} index={node.index} />
+            default :
+                return <TempHumBox node={node.item} index={node.index} />
         }
     }
 

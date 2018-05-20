@@ -6,18 +6,20 @@ import styles from '../styles/nodeBox';
 import common from '../styles/common';
 import Icon from './Icon';
 
-export default class BoxMoist extends Component {
+export default class BoxStatus extends Component {
 
     static propTypes = {
-        value: PropTypes.number
+        value: PropTypes.bool
     }
 
     render() {
-        if(this.props.value) {
+        if(this.props.value !== null) {
             return (
-                <View style={[styles.box, styles.boxGreen]}>
-                    <Icon name="water" color={common.colors.green} />
-                    <Text style={[styles.boxText, styles.greenText]}>{this.props.value}</Text>
+                <View style={[styles.box, styles.boxBlack]}>
+                    <Icon name={'power'} color={common.colors.black} />
+                    <Text style={[styles.boxText, styles.blackText]}>
+                        {this.props.value ? 'ON' : 'OFF'}
+                    </Text>
                 </View>
             );
         } else {

@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import moment from 'moment';
 import styles from '../styles/nodeBox';
 import common from '../styles/common';
-import Icon from 'react-native-vector-icons/FontAwesome';
+import Icon from './Icon';
 
 export default class BoxTemp extends Component {
 
@@ -16,7 +16,7 @@ export default class BoxTemp extends Component {
         if(this.props.value) {
             return (
                 <View style={[styles.box, styles.boxRed]}>
-                    <Icon name="thermometer-3" size={30} color={common.colors.red} />
+                    <Icon name={'temp-3'} color={common.colors.red} />
                     <Text style={[styles.boxText, styles.redText]}>{this.props.value}°C</Text>
                 </View>
             );

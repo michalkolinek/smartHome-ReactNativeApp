@@ -6,6 +6,9 @@
     "start": "node node_modules/react-native/local-cli/cli.js start",
     "test": "jest"
   },
+  "rnpm": {
+    "assets": [ "assets/font" ]
+  },
   "dependencies": {
     "clone": "^2.1.1",
     "moment": "^2.19.4",
@@ -16,7 +19,9 @@
     "react-native-firebase": "^3.2.7",
     "react-native-local-notifications": "^1.0.0",
     "react-native-vector-icons": "^4.4.3",
+    "react-redux": "^5.0.7",
     "react_native_mqtt": "^1.1.9",
+    "redux": "^3.7.2",
     "url": "^0.11.0"
   },
   "devDependencies": {

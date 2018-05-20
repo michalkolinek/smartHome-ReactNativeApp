@@ -7,7 +7,8 @@ import NodesList from './components/NodesList';
 import Header from './components/Header';
 import styles from './styles/main';
 import firebase from 'react-native-firebase';
-import RNLocalNotifications from 'react-native-local-notifications';
+//import RNLocalNotifications from 'react-native-local-notifications';
+//import { connect } from 'react-redux';
 
 init({
 	size: 10000,
@@ -67,20 +68,29 @@ export default class App extends Component {
                     time: null,
                     supplyV: null
                 },  {
+                    id: 'sprinklers',
+                    title: 'Zavlažování',
+                    status: null,
+                    lastIrrigated: null,
+                    moist: null,
+                    time: null,
+                    supplyV: null
+                },  {
+                    id: 'pool',
+                    title: 'Bazén',
+                    temp: null,
+                    time: null,
+                    supplyV: null
+                }, {
 					id: 'washmachine',
 					title: 'Pračka',
 					status: 'idle',
 					time: null,
 					supplyV: null,
 					acked: false
-				}, {
-                    id: 'sprinklers',
-                    title: 'Spriklery',
-                    status: null,
-                    time: null,
-                    supplyV: null
-                }
-			]
+				}
+			],
+			light: false
 		};
 
 		this.client = null;
@@ -131,7 +141,7 @@ export default class App extends Component {
 	}
 
 	handleConnectionLost(responseObject) {
-	    console.log(+ responseObject.errorMessage);
+	    console.log('connection lost: ' + responseObject.errorMessage);
 		this.setState({status: 'connection lost'});
 		setTimeout(() => this.connect(), 1000);
 	}
@@ -177,6 +187,15 @@ export default class App extends Component {
 				i = nodes.findIndex((item) => item.id == 'outside');
 				nodes[i].temp = data.temp;
 				nodes[i].hum = data.hum;
+				let j = nodes.findIndex((item) => item.id == 'sprinklers');
+                nodes[j].moist = data.moist;
+                if(data.time) {
+                    nodes[j].time = data.time;
+                }
+				break;
+			case 'smarthome/sprinklers':
+				i = nodes.findIndex((item) => item.id == 'sprinklers');
+				nodes[i].status = data.status;
 				break;
 			case 'smarthome/washmachine':
 //				i = nodes.findIndex((item) => item.id == 'washmachine');
@@ -251,17 +270,28 @@ export default class App extends Component {
         }
 	}
 
+	handleLightButtonPress() {
+	    this.setState({light: !this.state.light}, () => {
+	        this.client.publish('smarthome/controls/sprinklers', JSON.stringify({action: (this.state.light ? 'start' : 'stop')}), 2, false);
+	    });
+	}
+
 	render() {
+
+        let btnLabel = this.state.light ? 'Light Off' : 'Light On';
+
+        // <Button onPress={() => this.handleLightButtonPress()} title={btnLabel} />
 
 		return (
 			<View style={styles.container}>
 			    <Header status={this.state.status} />
+
                 <NodesList
                     pending={this.state.pending}
                     nodes={this.state.nodes}
                     onRefresh={() => this.reconnect()}
                     onWashmachineAck={() => this.handleWashmachineAck()}/>
-			</View>
+            </View>
 		);
 	}
 }
