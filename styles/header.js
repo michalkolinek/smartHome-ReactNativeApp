@@ -3,7 +3,7 @@ import common from './common';
 
 export default StyleSheet.create({
 	container: {
-		backgroundColor: '#eee',
+		backgroundColor: common.colors.lightGray,
         width: '100%',
         height: 60,
         paddingLeft: 10,

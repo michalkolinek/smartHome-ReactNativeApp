@@ -6,18 +6,22 @@ import styles from '../styles/nodeBox';
 import common from '../styles/common';
 import Icon from './Icon';
 
-export default class BoxHum extends Component {
+export default class BoxWaterColumn extends Component {
 
     static propTypes = {
         value: PropTypes.number
     }
 
     render() {
-        if(this.props.value) {
+    console.log('this.props.value', this.props.value);
+
+        if(this.props.value !== null) {
             return (
                 <View style={[styles.box, styles.boxBlue]}>
-                    <Icon name="humidity" color={common.colors.blue} />
-                    <Text style={[styles.boxText, styles.blueText]}>{this.props.value}<Text style={styles.unit}>%</Text></Text>
+                    <Icon name="water" color={common.colors.blue} size={28} />
+                    <Text style={[styles.boxText, styles.blueText]}>
+                        {this.props.value} <Text style={styles.unit}>mm/h</Text>
+                    </Text>
                 </View>
             );
         } else {

@@ -1,24 +1,25 @@
 
 import React, { Component } from 'react';
-import { Text, View, Button, AsyncStorage } from 'react-native';
+import { Text, View, Button, AsyncStorage, Dimensions } from 'react-native';
 import clone from 'clone';
-import init from 'react_native_mqtt';
-import NodesList from './components/NodesList';
 import Header from './components/Header';
+import Feed from './components/Feed';
 import styles from './styles/main';
+import tabsStyles from './styles/tabs';
+import common from './styles/common';
 import firebase from 'react-native-firebase';
-//import RNLocalNotifications from 'react-native-local-notifications';
-//import { connect } from 'react-redux';
+import { TabView, TabBar, SceneMap } from 'react-native-tab-view';
+import { Client, Message } from 'react-native-paho-mqtt';
 
-init({
-	size: 10000,
-	storageBackend: AsyncStorage,
-	defaultExpires: 1000 * 3600 * 24,
-	enableCache: true,
-	reconnect: true,
-	sync : {
-	}
-});
+const myStorage = {
+  setItem: (key, item) => {
+    myStorage[key] = item;
+  },
+  getItem: (key) => myStorage[key],
+  removeItem: (key) => {
+    delete myStorage[key];
+  },
+};
 
 export default class App extends Component {
 
@@ -37,6 +38,10 @@ export default class App extends Component {
 					title: 'Venku',
 					temp: null,
 					hum: null,
+					press: null,
+					windAvg: null,
+                    windMax: null,
+                    waterColumn: null,
 					time: null,
 					supplyV: null
 				}, {
@@ -82,6 +87,11 @@ export default class App extends Component {
                     time: null,
                     supplyV: null
                 }, {
+                    id: 'fan',
+                    title: 'Větrání',
+                    status: null,
+                    supplyV: null
+                }, {
 					id: 'washmachine',
 					title: 'Pračka',
 					status: 'idle',
@@ -90,40 +100,56 @@ export default class App extends Component {
 					acked: false
 				}
 			],
-			light: false
+			light: false,
+			tabs: {
+			    index: 0,
+			    routes: [
+                    { key: 'feed', title: 'Live Feed' },
+                    { key: 'stats', title: 'Stats' },
+                    { key: 'controls', title: 'Controls' }
+                ]
+			}
 		};
 
 		this.client = null;
 		this.config = {
-			qos: 2,
-			port: 9001,
-			broker: 'home.websense.cz'
+		    qos: 1,
+			broker: 'ws://home.websense.cz:9001/',
+			clientId: 'SmartHome-RNA' + Math.round(Math.random()*100000)
 		};
 	}
 
 	componentDidMount() {
 	    firebase.auth()
-          .signInAnonymouslyAndRetrieveData()
-          .then(credential => {
-            if (credential) {
-              console.log('default app user ->', credential.user.toJSON());
-            }
-          });
+            .signInAnonymouslyAndRetrieveData()
+            .then(credential => {
+                if (credential) {
+//                    console.log('default app user ->', credential.user.toJSON());
+                }
+            });
 
-	    this.connect();
+        this.client = new Client({ uri: this.config.broker, clientId: this.config.clientId, storage: myStorage })
+        this.client.on('connectionLost', (responseObject) => this.handleConnectionLost(responseObject));
+        this.client.on('messageReceived', (message) => this.handleMessage(message));
+        this.connect();
+
         this.registerFCM();
 	}
 
 	connect() {
-	    this.setState({pending: true});
-		this.client = new Paho.MQTT.Client(this.config.broker, this.config.port, '/mqtt', 'michal1');
-		this.client.onConnectionLost = (responseObject) => this.handleConnectionLost(responseObject);
-		this.client.onMessageArrived = (message) => this.handleMessageArrived(message);
-		this.client.connect({
-			onSuccess: () => { this.handleConnect(); },
-			useSSL: false,
-			onFailure: (responseObject) => { this.handleConnectFailed(responseObject); }
-		});
+	    if(this.state.status !== 'connected') {
+            this.setState({pending: true});
+            this.client.connect({reconnect: false, keepAliveInterval: 30, mqttVersion: 4})
+                .then(() => {
+                    console.log('onConnect');
+                    this.handleConnect();
+                })
+                .catch((responseObject) => {
+                    if (responseObject.errorCode !== 0) {
+                      console.log('onConnectionLost:' + responseObject.errorMessage);
+                    }
+            });
+        }
 	}
 
 	disconnect() {
@@ -141,7 +167,7 @@ export default class App extends Component {
 	}
 
 	handleConnectionLost(responseObject) {
-	    console.log('connection lost: ' + responseObject.errorMessage);
+	    console.log('connection lost', responseObject);
 		this.setState({status: 'connection lost'});
 		setTimeout(() => this.connect(), 1000);
 	}
@@ -152,73 +178,113 @@ export default class App extends Component {
 				qos: this.config.qos,
 				timeout: 10,
 				onSuccess: () => {
-					this.handleSubscribeSuccess();
-					this.registerDevice()
-				},
-				onFailure: () => {
-					this.handleSubscribeFailure();
-				}
-			});
-		});
+                    this.handleSubscribeSuccess();
+                },
+                onFailure: (invocationContext, errorCode, errorMessage) => {
+                    this.handleSubscribeFailure(invocationContext, errorCode, errorMessage);
+                }
+		    });
+		    this.registerDevice();
+	    });
 	}
+
 	handleConnectFailed(responseObject) {
-		console.log(responseObject.errorMessage);
+		console.log('connection failed', responseObject.errorMessage);
 		this.setState({status: 'connection failed'});
-		setTimeout(() => this.connect(), 10000);
+		setTimeout(() => this.connect(), 1000);
 	}
 
 	handleSubscribeSuccess() {
 		this.setState({status: 'subscribed'});
 	}
 
-	handleSubscribeFailure() {
+	handleSubscribeFailure(invocationContext, errorCode, errorMessage) {
+	    console.log('subscription failed', errorMessage);
 		this.setState({status: 'subscription failed'});
 	}
 
-	handleMessageArrived(message) {
-		const data = JSON.parse(message.payloadString);
+	handleMessage(message) {
+	    let data;
+	    try {
+		    data = JSON.parse(message.payloadString);
+		}
+        catch(e) {
+            console.log('chyba pri parsovani zpravy, zahazuji');
+            return false;
+        }
+
 		let nodes = clone(this.state.nodes);
-		let i = null;
+		let i, j = null;
 
-		console.log(message.topic, data);
-
-		switch(message.topic) {
+		switch(message.destinationName) {
 			case 'smarthome/outside':
 				i = nodes.findIndex((item) => item.id == 'outside');
 				nodes[i].temp = data.temp;
 				nodes[i].hum = data.hum;
-				let j = nodes.findIndex((item) => item.id == 'sprinklers');
+				j = nodes.findIndex((item) => item.id == 'sprinklers');
                 nodes[j].moist = data.moist;
                 if(data.time) {
                     nodes[j].time = data.time;
                 }
 				break;
+			case 'smarthome/wind':
+                i = nodes.findIndex((item) => item.id == 'outside');
+                nodes[i].windAvg = data.windAvg;
+                nodes[i].windMax = data.windMax;
+                if(data.time) {
+                    nodes[i].time = data.time;
+                }
+                break;
+            case 'smarthome/rain':
+                i = nodes.findIndex((item) => item.id == 'outside');
+                nodes[i].waterColumn = data.waterColumn;
+                if(data.time) {
+                    nodes[i].time = data.time;
+                }
+                break;
+			case 'smarthome/office':
+                i = nodes.findIndex((item) => item.id == 'office');
+                nodes[i].temp = data.temp;
+                nodes[i].hum = data.hum;
+                j = nodes.findIndex((item) => item.id == 'outside');
+                nodes[j].press = data.press;
+                if(data.time) {
+                    nodes[j].time = data.time;
+                }
+                break;
 			case 'smarthome/sprinklers':
 				i = nodes.findIndex((item) => item.id == 'sprinklers');
 				nodes[i].status = data.status;
 				break;
+			case 'smarthome/fan':
+                i = nodes.findIndex((item) => item.id == 'fan');
+                nodes[i].status = (parseInt(data) === 1);
+                break;
 			case 'smarthome/washmachine':
-//				i = nodes.findIndex((item) => item.id == 'washmachine');
+				i = nodes.findIndex((item) => item.id == 'washmachine');
 //				if(this.state.acked === false) {
 //				    nodes[i].status = data.status;
 //				}
 				break;
 			default:
-                i = nodes.findIndex((item) => item.id == message.topic.replace('smarthome/', ''));
-                nodes[i].temp = data.temp;
-                nodes[i].hum = data.hum;
-                break;
+			    const topic = message.destinationName.replace('smarthome/', '');
+                i = nodes.findIndex((item) => item.id == topic);
+
+                if(i > -1) {
+                    nodes[i].temp = data.temp;
+                    nodes[i].hum = data.hum;
+                }
 		}
-		if(i !== null && data.supplyV) {
+
+		if(i > -1 && data.supplyV) {
 			nodes[i].supplyV = data.supplyV;
 		}
 
-		if(i !== null && data.time) {
+		if(i > -1 && data.time) {
         	nodes[i].time = data.time;
         }
 
 		this.setState({status: 'receiving', pending: false, nodes});
-
 	}
 
 	handleWashmachineAck() {
@@ -244,7 +310,6 @@ export default class App extends Component {
 	    const fcm = firebase.messaging();
         fcm.getToken().then((token) => {
             this.setState({deviceToken: token});
-            this.registerDevice();
         });
         fcm.subscribeToTopic('notifications');
         fcm.onMessage((message) => {
@@ -263,35 +328,91 @@ export default class App extends Component {
 	}
 
 	registerDevice() {
+	console.log('registerDevice', this.state.connected, this.state.registered);
 	    if(this.state.connected && !!this.state.deviceToken && !this.state.registered) {
 	        console.log('messaging token', this.state.deviceToken);
-            this.client.publish('smarthome/registration', this.state.deviceToken, 2, false);
+            this.publish('smarthome/registration', JSON.stringify({deviceId: this.state.deviceToken}), 0, false);
             this.setState({registered: true});
         }
 	}
 
 	handleLightButtonPress() {
 	    this.setState({light: !this.state.light}, () => {
-	        this.client.publish('smarthome/controls/sprinklers', JSON.stringify({action: (this.state.light ? 'start' : 'stop')}), 2, false);
+//	        this.publish('smarthome/controls/sprinklers', JSON.stringify({action: (this.state.light ? 'start' : 'stop')}), 2, false);
 	    });
 	}
 
+	handleCommand(node, param) {
+        this.publish('smarthome/controls/' + node, JSON.stringify(param), 2, false);
+    }
+
+	handleTabChange(index) {
+	    this.state.tabs.index = index;
+	    this.forceUpdate();
+	}
+
+	publish(topic, payload, qos, retain) {
+	    const message = new Message(payload);
+        message.destinationName = topic;
+        message.qos = qos;
+        message.retain = retain;
+        this.sendMessage(message);
+	}
+
+	sendMessage(message) {
+	    if(this.state.connected) {
+	        this.client.send(message);
+        } else {
+	        setTimeout(() => {
+	            this.sendMessage(message);
+	        }, 500);
+	    }
+	}
+
+	renderTabBar(props) {
+	    return (
+	        <View style={styles.appHeader}>
+	            <Header status={this.state.status} />
+	            <TabBar {...props}
+	                style={tabsStyles.tabBar}
+	                indicatorStyle={tabsStyles.indicator}
+	                labelStyle={tabsStyles.tabLabel}
+                />
+            </View>
+        );
+    }
+
 	render() {
+        const scene = ({ route }) => {
+             switch (route.key) {
+                case 'feed':
+                    return <Feed {...this.props}
+                                    nodes={this.state.nodes}
+                                    onRefresh={() => this.reconnect()}
+                                    onWashmachineAck={() => this.handleWashmachineAck()}
+                                    onCommand={(node, param) => this.handleCommand(node, param)} />;
+                case 'stats':
+                    return <View style={[styles.container, {backgroundColor: common.colors.blue} ]}>
 
-        let btnLabel = this.state.light ? 'Light Off' : 'Light On';
-
-        // <Button onPress={() => this.handleLightButtonPress()} title={btnLabel} />
+                           </View>;
+                case 'controls':
+                    return <View style={[styles.container, {backgroundColor: common.colors.yellow} ]}></View>;
+                default:
+                    return null;
+            }
+        };
 
 		return (
-			<View style={styles.container}>
-			    <Header status={this.state.status} />
-
-                <NodesList
-                    pending={this.state.pending}
-                    nodes={this.state.nodes}
-                    onRefresh={() => this.reconnect()}
-                    onWashmachineAck={() => this.handleWashmachineAck()}/>
-            </View>
+            <TabView
+                navigationState={this.state.tabs}
+                renderScene={scene}
+                renderTabBar={(props) => this.renderTabBar(props)}
+                onIndexChange={index => this.handleTabChange(index)}
+                initialLayout={{
+                    width: Dimensions.get('window').width,
+                    height: 500
+                }}
+            />
 		);
 	}
 }

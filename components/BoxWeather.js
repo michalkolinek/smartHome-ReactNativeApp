@@ -6,28 +6,20 @@ import styles from '../styles/nodeBox';
 import common from '../styles/common';
 import Icon from './Icon';
 
-export default class BoxStatus extends Component {
+export default class BoxWeather extends Component {
 
     static propTypes = {
-        value: PropTypes.bool
+        value: PropTypes.object
     }
 
     render() {
-        if(this.props.value !== null) {
-
-            let style = [styles.diode];
-            if(this.props.value) {
-                style.push(styles.diodeActive);
-            }
-            const diode = <View style={style} />
-
+        if(this.props.value) {
             return (
                 <View style={[styles.box, styles.boxBlack]}>
-                    <Icon name={'power'} color={common.colors.black} />
+                    <Icon name="wind" color={common.colors.black} size={28} />
                     <Text style={[styles.boxText, styles.blackText]}>
-                        {this.props.value ? 'ON' : 'OFF'}
+                        {this.props.value.avg}<Text style={styles.gray}>/{this.props.value.max}</Text> <Text style={styles.unit}>m/s</Text>
                     </Text>
-                    {diode}
                 </View>
             );
         } else {

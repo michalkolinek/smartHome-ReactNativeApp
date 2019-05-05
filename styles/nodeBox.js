@@ -42,6 +42,20 @@ export default StyleSheet.create({
 	    fontSize: 24
 	},
 
+	diode: {
+	    position: 'absolute',
+	    right: 10,
+	    top: 10,
+	    width: 8,
+	    height: 8,
+	    borderRadius: 4,
+	    backgroundColor: common.colors.gray
+    },
+
+	diodeActive: {
+	    backgroundColor: common.colors.greenHighlight
+	},
+
 	box: {
 	    flex: 1,
 	    marginRight: 10,
@@ -49,7 +63,11 @@ export default StyleSheet.create({
 	    borderRadius: 3,
 	    padding: 10,
 	    flexDirection: 'row',
-	    justifyContent: 'center'
+	    justifyContent: 'center',
+	},
+
+	touchableBox: {
+	    flex: 1
 	},
 
 	boxText: {
@@ -93,6 +111,11 @@ export default StyleSheet.create({
         color: common.colors.black
     },
 
+    warningIcon: {
+        marginRight: 6,
+        marginTop: 1
+    },
+
     notification: {
         fontSize: 18
     },
@@ -106,6 +129,15 @@ export default StyleSheet.create({
 
     ackButton: {
         width: 60,
+        fontSize: 18
+    },
+
+    gray: {
+        color: common.colors.darkGray,
+        fontSize: 18
+    },
+
+    unit: {
         fontSize: 18
     }
 
